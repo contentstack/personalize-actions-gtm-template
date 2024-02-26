@@ -144,13 +144,12 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY",
         "enablingConditions": []
       }
-    ],
-    "defaultValue": "6597ecc2addd0ce291323f5f"
+    ]
   },
   {
     "type": "TEXT",
     "name": "personalizeSdkUrl",
-    "displayName": "Personalize SDK Url",
+    "displayName": "Personalize SDK URL",
     "simpleValueType": true,
     "enablingConditions": [
       {
@@ -180,6 +179,7 @@ const actionType = data.actionType;
 const INITIALIZE = 'initialize';
 const TRIGGER_IMPRESSIONS = 'triggerImpressions';
 const TRIGGER_EVENT = 'triggerEvent';
+const SET_ATTRIBUTES = 'setAttributes';
 
 function main() {
   if (actionType != INITIALIZE && !initializationCalled()) {
@@ -200,7 +200,7 @@ function performAction() {
     case INITIALIZE: {
       const projectUid = data.projectUid;
       const personalizeSdkUrl = data.personalizeSdkUrl;
-      
+
       injectScript(personalizeSdkUrl, onSdkLoad, onSdkFailure, personalizeSdkUrl);
       break;
     }
@@ -216,26 +216,60 @@ function performAction() {
       break;
     }
     case TRIGGER_EVENT:
+      const eventKey = data.eventKey;
+      if(!eventKey) {
+        failGTM('Event Key cannot be empty');
+      }
+      performTriggerEvent(eventKey);
       break;
-    default: failGTM('Please select a valid actionType');
+    case SET_ATTRIBUTES:
+      const userAttributes = data.userAttributes;
+      if(!userAttributes) {
+        failGTM('User attributes cannot be empty');
+        break;
+      }
+      const userAttributesObject = {};
+      userAttributes.forEach(item => {
+          if(item.attributeValue == "true") {
+            item.attributeValue = true;
+          }
+          if(item.attributeValue == "false") {
+            item.attributeValue = false;
+          }
+          userAttributesObject[item.attributeKey] = item.attributeValue;
+      });
+      log(userAttributesObject);
+      performSetAttributes(userAttributesObject);
+      break;
+    default:
+      failGTM('Please select a valid actionType');
       break;
   }
-  
 }
 
-function onSdkLoad(){
-  callInWindow('personalization.init', data.projectUid, {edgeMode: true});
+function onSdkLoad() {
+  callInWindow('personalization.init', data.projectUid, { edgeMode: true });
   successGTM();
 }
 
-function onSdkFailure(){
+function onSdkFailure() {
   failGTM('Failed to load sdk');
 }
 
 function performTriggerImpressions(experienceShortUIDs) {
-  experienceShortUIDs.map((experienceShortUID) => {
+  experienceShortUIDs.forEach((experienceShortUID) => {
     callInWindow('personalization.triggerImpression', experienceShortUID);
   });
+  successGTM();
+}
+
+function performTriggerEvent(eventKey) {
+  callInWindow('personalization.triggerEvent', eventKey);
+  successGTM();
+}
+
+function performSetAttributes(userAttributes) {
+  callInWindow('personalization.set', userAttributes);
   successGTM();
 }
 
@@ -405,6 +439,84 @@ ___WEB_PERMISSIONS___
                     "boolean": true
                   }
                 ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "personalization.triggerEvent"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "personalization.set"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
               }
             ]
           }
@@ -468,6 +580,21 @@ scenarios:
 
     assertApi('gtmOnSuccess').wasCalled();
     assertApi('gtmOnFailure').wasNotCalled();
+- name: calls init when sdk is loaded and initialize is selected
+  code: |
+    let success, failure;
+
+    mock('injectScript', function (url, onSuccess, onFailure){
+      success = onSuccess;
+      failure = onFailure;
+      onSuccess();
+    });
+
+    mockData.actionType = "initialize";
+
+    runCode(mockData);
+
+    assertApi('callInWindow').wasCalledWith('personalization.init', mockData.projectUid, {edgeMode:true});
 - name: logs error and exits when sdk fails to load when initialize is selected
   code: |-
     let success, failure;
@@ -519,6 +646,7 @@ scenarios:
 - name: triggers impressions for a list of experiences when triggerImpressions is
     selected
   code: |
+    mockData.actionType = 'triggerImpressions';
     const testExperiences = [{ shortUID: 'mockShortUID_one' }, { shortUID: 'mockShortUID_two' }];
     mockData.experiences = testExperiences;
 
@@ -533,8 +661,9 @@ scenarios:
     assertApi('callInWindow').wasCalledWith('personalization.triggerImpression', testExperiences[0].shortUID);
     assertApi('callInWindow').wasCalledWith('personalization.triggerImpression', testExperiences[1].shortUID);
     assertApi('gtmOnSuccess').wasCalled();
-- name: fails if trigggerImpressions is selected and did not input experienceShortUIDs
+- name: fails if triggerImpressions is selected and did not input experienceShortUIDs
   code: |
+    mockData.actionType = 'triggerImpressions';
     mock('callInWindow', function (method) {
       if (method === 'personalization.getInitializationStatus') {
         return 'initialzing';
@@ -545,21 +674,35 @@ scenarios:
 
     assertApi('logToConsole').wasCalledWith('Experience ShortUIDs cannot be empty');
     assertApi('gtmOnFailure').wasCalled();
-- name: calls init when sdk is loaded and initialize is selected
-  code: |
-    let success, failure;
+- name: triggers event with eventkey when triggerEvent is selected
+  code: |-
+    mockData.actionType = "triggerEvent";
+    mockData.eventKey = "mock-event";
 
-    mock('injectScript', function (url, onSuccess, onFailure){
-      success = onSuccess;
-      failure = onFailure;
-      onSuccess();
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
     });
-
-    mockData.actionType = "initialize";
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.init', mockData.projectUid, {edgeMode:true});
+    assertApi('callInWindow').wasCalledWith('personalization.triggerEvent', 'mock-event');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: fails if triggerEvent is selected and did not input eventKey
+  code: |-
+    mockData.actionType = "triggerEvent";
+
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
+    });
+
+    runCode(mockData);
+
+    assertApi('logToConsole').wasCalledWith('Event Key cannot be empty');
+    assertApi('gtmOnFailure').wasCalled();
 - name: fails if the actionType is invalid
   code: |-
     mockData.actionType = undefined;
@@ -574,11 +717,38 @@ scenarios:
 
     assertApi('gtmOnFailure').wasCalled();
     assertApi('logToConsole').wasCalledWith('Please select a valid actionType');
+- name: sets user attributes when action is selected as set attributes
+  code: |-
+    mockData.actionType = "setAttributes";
+    mockData.userAttributes = [{"attributeKey":"mock-attribute","attributeValue":"true"}];
+
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
+    });
+
+    runCode(mockData);
+
+    assertApi('callInWindow').wasCalledWith('personalization.set', {"mock-attribute":true});
+    assertApi('gtmOnSuccess').wasCalled();
+- name: fails to set user attributes if undefined
+  code: |-
+    mockData.actionType = "setAttributes";
+
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnFailure').wasCalled();
 setup: |-
   const log = require('logToConsole');
 
   const mockData = {
-    actionType: 'triggerImpressions',
     personalizeSdkUrl: 'mockURL',
     projectUid: "mockProjectUID",
   };
@@ -586,6 +756,6 @@ setup: |-
 
 ___NOTES___
 
-Created on 16/02/2024, 12:30:41
+Created on 16/02/2024, 11:10:48
 
 
