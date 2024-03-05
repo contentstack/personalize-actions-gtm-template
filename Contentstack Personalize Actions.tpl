@@ -40,6 +40,14 @@ ___TEMPLATE_PARAMETERS___
       {
         "value": "initialize",
         "displayValue": "Initialize"
+      },
+      {
+        "value": "setUserId",
+        "displayValue": "Set UserId"
+      },
+      {
+        "value": "reset",
+        "displayValue": "Reset"
       }
     ],
     "simpleValueType": true,
@@ -65,7 +73,8 @@ ___TEMPLATE_PARAMETERS___
       {
         "type": "NON_EMPTY"
       }
-    ]
+    ],
+    "help": "Custom event key defined in the personalization management console"
   },
   {
     "type": "PARAM_TABLE",
@@ -93,7 +102,8 @@ ___TEMPLATE_PARAMETERS___
       {
         "type": "NON_EMPTY"
       }
-    ]
+    ],
+    "help": "Short UIDs of the experiences for which you want to register an impression"
   },
   {
     "type": "PARAM_TABLE",
@@ -125,7 +135,8 @@ ___TEMPLATE_PARAMETERS___
         "paramValue": "setAttributes",
         "type": "EQUALS"
       }
-    ]
+    ],
+    "help": "These attributes are used to evaluate audience membership"
   },
   {
     "type": "TEXT",
@@ -144,7 +155,8 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY",
         "enablingConditions": []
       }
-    ]
+    ],
+    "help": "The UID of your project"
   },
   {
     "type": "TEXT",
@@ -164,6 +176,20 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "defaultValue": "https://assets.contentstack.io/v3/assets/bltcd4841bc7e61a34b/blt02415cd3d24cb58b/65cef205971dbb1f453ff24d/personalization.min.js"
+  },
+  {
+    "type": "CHECKBOX",
+    "name": "preserveUserAttributes",
+    "checkboxText": "Preserve User Attributes",
+    "simpleValueType": true,
+    "enablingConditions": [
+      {
+        "paramName": "actionType",
+        "paramValue": "setUserId",
+        "type": "EQUALS"
+      }
+    ],
+    "help": "Set this to true if you want the attributes to be preserved/merged when the user logs in"
   }
 ]
 
@@ -173,6 +199,7 @@ ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 const log = require('logToConsole');
 const callInWindow = require('callInWindow');
 const injectScript = require('injectScript');
+const copyFromDataLayer = require('copyFromDataLayer');
 
 const actionType = data.actionType;
 
@@ -180,6 +207,8 @@ const INITIALIZE = 'initialize';
 const TRIGGER_IMPRESSIONS = 'triggerImpressions';
 const TRIGGER_EVENT = 'triggerEvent';
 const SET_ATTRIBUTES = 'setAttributes';
+const SET_USER_ID = 'setUserId';
+const RESET = 'reset';
 
 function main() {
   if (actionType != INITIALIZE && !initializationCalled()) {
@@ -238,8 +267,15 @@ function performAction() {
           }
           userAttributesObject[item.attributeKey] = item.attributeValue;
       });
-      log(userAttributesObject);
       performSetAttributes(userAttributesObject);
+      break;
+    case SET_USER_ID:
+      const userId = copyFromDataLayer('data.email',2);
+      const preserveUserAttributes = data.preserveUserAttributes;
+      performSetUserId(userId, preserveUserAttributes);
+      break;
+    case RESET:
+      performReset();
       break;
     default:
       failGTM('Please select a valid actionType');
@@ -270,6 +306,21 @@ function performTriggerEvent(eventKey) {
 
 function performSetAttributes(userAttributes) {
   callInWindow('personalization.set', userAttributes);
+  successGTM();
+}
+
+function performSetUserId(userId, preserveUserAttributes) {
+  if(preserveUserAttributes) {
+    callInWindow('personalization.setUserId', userId, {preserveUserAttributes: true});
+  } else {
+    callInWindow('personalization.setUserId', userId);
+  }
+  
+  successGTM();
+}
+
+function performReset() {
+  callInWindow('personalization.reset');
   successGTM();
 }
 
@@ -517,6 +568,84 @@ ___WEB_PERMISSIONS___
                     "boolean": true
                   }
                 ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "personalization.setUserId"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "personalization.reset"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
               }
             ]
           }
@@ -545,6 +674,27 @@ ___WEB_PERMISSIONS___
                 "string": "https://assets.contentstack.io/v3/assets/*"
               }
             ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "read_data_layer",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "allowedKeys",
+          "value": {
+            "type": 1,
+            "string": "any"
           }
         }
       ]
@@ -745,6 +895,63 @@ scenarios:
     runCode(mockData);
 
     assertApi('gtmOnFailure').wasCalled();
+- name: sets the user id when setUserId is selected and preserveUserAttributes is
+    true
+  code: |-
+    mockData.actionType = "setUserId";
+    mockData.preserveUserAttributes = true;
+
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
+    });
+
+    mock('copyFromDataLayer', function (object) {
+      return 'mock-email@gmail.com';
+    });
+    runCode(mockData);
+
+    const userId = 'mock-email@gmail.com';
+
+    assertApi('callInWindow').wasCalledWith('personalization.setUserId', userId, {preserveUserAttributes: true});
+    assertApi('gtmOnSuccess').wasCalled();
+- name: sets the user id when setUserId is selected and preserveUserAttributes is
+    false
+  code: |-
+    mockData.actionType = "setUserId";
+    mockData.preserveUserAttributes = false;
+
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
+    });
+
+    mock('copyFromDataLayer', function (object) {
+      return 'mock-email@gmail.com';
+    });
+
+    runCode(mockData);
+
+    const userId = 'mock-email@gmail.com';
+
+    assertApi('callInWindow').wasCalledWith('personalization.setUserId', userId);
+    assertApi('gtmOnSuccess').wasCalled();
+- name: resets the sdk when reset action is selected
+  code: |-
+    mockData.actionType = 'reset';
+
+    mock('callInWindow', function (method) {
+      if(method === 'personalization.getInitializationStatus') {
+        return 'initializing';
+      }
+    });
+
+    runCode(mockData);
+
+    assertApi('callInWindow').wasCalledWith('personalization.reset');
+    assertApi('gtmOnSuccess').wasCalled();
 setup: |-
   const log = require('logToConsole');
 
