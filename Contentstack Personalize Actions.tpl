@@ -190,6 +190,26 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "help": "Set this to true if you want the attributes to be preserved/merged when the user logs in"
+  },
+  {
+    "type": "TEXT",
+    "name": "edgeApiUrl",
+    "displayName": "Edge API URL",
+    "simpleValueType": true,
+    "enablingConditions": [
+      {
+        "paramName": "actionType",
+        "paramValue": "initialize",
+        "type": "EQUALS"
+      }
+    ],
+    "help": "Choose between different regions by setting the Edge API URL. You don\u0027t need to change this field if your project is created in AWS NA region. See https://www.contentstack.com/docs/developers/contentstack-regions/about-regions for more information.",
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY"
+      }
+    ],
+    "defaultValue": "https://personalization-edge.contentstack.com"
   }
 ]
 
@@ -229,6 +249,7 @@ function performAction() {
     case INITIALIZE: {
       const projectUid = data.projectUid;
       const personalizeSdkUrl = data.personalizeSdkUrl;
+      const edgeApiUrl = data.edgeApiUrl;
 
       injectScript(personalizeSdkUrl, onSdkLoad, onSdkFailure, personalizeSdkUrl);
       break;
@@ -284,6 +305,7 @@ function performAction() {
 }
 
 function onSdkLoad() {
+  callInWindow('personalization.setEdgeApiUrl', data.edgeApiUrl);
   callInWindow('personalization.init', data.projectUid, { edgeMode: true });
   successGTM();
 }
@@ -646,6 +668,45 @@ ___WEB_PERMISSIONS___
                     "boolean": true
                   }
                 ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "personalization.setEdgeApiUrl"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
               }
             ]
           }
@@ -744,6 +805,7 @@ scenarios:
 
     runCode(mockData);
 
+    assertApi('callInWindow').wasCalledWith('personalization.setEdgeApiUrl', mockData.edgeApiUrl);
     assertApi('callInWindow').wasCalledWith('personalization.init', mockData.projectUid, {edgeMode:true});
 - name: logs error and exits when sdk fails to load when initialize is selected
   code: |-
@@ -957,7 +1019,8 @@ setup: |-
 
   const mockData = {
     personalizeSdkUrl: 'mockURL',
-    projectUid: "mockProjectUID",
+    projectUid: 'mockProjectUID',
+    edgeApiUrl: 'mockEdgeApiUrl',
   };
 
 
