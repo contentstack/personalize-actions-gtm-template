@@ -6,9 +6,14 @@
   "version": 1,
   "securityGroups": [],
   "displayName": "Contentstack Personalize Actions",
+  "categories": [
+    "MARKETING",
+    "ANALYTICS",
+    "PERSONALIZATION"
+  ],
   "brand": {
-    "id": "brand_dummy",
-    "displayName": ""
+    "id": "contentstack",
+    "displayName": "Contentstack"
   },
   "description": "",
   "containerContexts": [
