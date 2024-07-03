@@ -180,7 +180,7 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY"
       }
     ],
-    "defaultValue": "https://assets.contentstack.io/v3/assets/bltcd4841bc7e61a34b/blt02415cd3d24cb58b/65cef205971dbb1f453ff24d/personalization.min.js"
+    "defaultValue": "https://assets.contentstack.io/v3/assets/bltcd4841bc7e61a34b/blt02415cd3d24cb58b/personalize.min.js"
   },
   {
     "type": "CHECKBOX",
