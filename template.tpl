@@ -15,7 +15,7 @@
     "id": "contentstack",
     "displayName": "Contentstack"
   },
-  "description": "",
+  "description": "Integrate the Personalize SDK into your frontend seamlessly through Google Tag Manager",
   "containerContexts": [
     "WEB"
   ]
