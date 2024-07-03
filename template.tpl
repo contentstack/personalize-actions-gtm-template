@@ -79,7 +79,7 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY"
       }
     ],
-    "help": "Custom event key defined in the personalization management console"
+    "help": "Custom event key defined in the Personalize management console"
   },
   {
     "type": "PARAM_TABLE",
