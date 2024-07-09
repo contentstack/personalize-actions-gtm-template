@@ -1,5 +1,5 @@
 homepage: "https://www.contentstack.com"
 documentation: "https://www.contentstack.com/docs"
 versions:
-  - sha: 0112c995718fad810aef425ee85547f0bbfe71e2
+  - sha: b2299ca9adf256fe84e78f8850bdbac619f59f8a
     changeNotes: Initial release.
