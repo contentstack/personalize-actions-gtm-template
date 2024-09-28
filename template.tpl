@@ -189,7 +189,27 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY"
       }
     ],
-    "defaultValue": "https://assets.contentstack.io/v3/assets/bltbff11e3c6671e9e8/bltb160f0e428d1da62/personalize.min.js"
+    "defaultValue": "https://cdn.jsdelivr.net/npm/@contentstack/personalize-edge-sdk/dist/personalize-edge-sdk.min.js"
+  },
+  {
+    "type": "TEXT",
+    "name": "edgeApiUrl",
+    "displayName": "Edge API URL",
+    "simpleValueType": true,
+    "enablingConditions": [
+      {
+        "paramName": "actionType",
+        "paramValue": "initialize",
+        "type": "EQUALS"
+      }
+    ],
+    "help": "Choose between different regions by setting the Edge API URL. You don\u0027t need to change this field if your project is created in AWS NA region. See https://www.contentstack.com/docs/developers/apis/personalize-edge-api#base-url for more information.",
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY"
+      }
+    ],
+    "defaultValue": "https://personalize-edge.contentstack.com"
   },
   {
     "type": "CHECKBOX",
@@ -204,26 +224,6 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "help": "Set this to true if you want the attributes to be preserved/merged when the user logs in"
-  },
-  {
-    "type": "TEXT",
-    "name": "edgeApiUrl",
-    "displayName": "Edge API URL",
-    "simpleValueType": true,
-    "enablingConditions": [
-      {
-        "paramName": "actionType",
-        "paramValue": "initialize",
-        "type": "EQUALS"
-      }
-    ],
-    "help": "Choose between different regions by setting the Edge API URL. You don\u0027t need to change this field if your project is created in AWS NA region. See https://www.contentstack.com/docs/developers/contentstack-regions/about-regions for more information.",
-    "valueValidators": [
-      {
-        "type": "NON_EMPTY"
-      }
-    ],
-    "defaultValue": "https://personalization-edge.contentstack.com"
   }
 ]
 
@@ -253,7 +253,7 @@ function main() {
 }
 
 function initializationCalled() {
-  const initStatus = callInWindow('personalization.getInitializationStatus');
+  const initStatus = callInWindow('personalize.getInitializationStatus');
 
   return initStatus === undefined ? false : true;
 }
@@ -261,9 +261,7 @@ function initializationCalled() {
 function performAction() {
   switch (actionType) {
     case INITIALIZE: {
-      const projectUid = data.projectUid;
       const personalizeSdkUrl = data.personalizeSdkUrl;
-      const edgeApiUrl = data.edgeApiUrl;
 
       injectScript(personalizeSdkUrl, onSdkLoad, onSdkFailure, personalizeSdkUrl);
       break;
@@ -319,8 +317,8 @@ function performAction() {
 }
 
 function onSdkLoad() {
-  callInWindow('personalization.setEdgeApiUrl', data.edgeApiUrl);
-  callInWindow('personalization.init', data.projectUid, { edgeMode: true });
+  callInWindow('personalize.setEdgeApiUrl', data.edgeApiUrl);
+  callInWindow('personalize.init', data.projectUid);
   successGTM();
 }
 
@@ -330,33 +328,33 @@ function onSdkFailure() {
 
 function performTriggerImpressions(experienceShortUIDs) {
   experienceShortUIDs.forEach((experienceShortUID) => {
-    callInWindow('personalization.triggerImpression', experienceShortUID);
+    callInWindow('personalize.triggerImpression', experienceShortUID);
   });
   successGTM();
 }
 
 function performTriggerEvent(eventKey) {
-  callInWindow('personalization.triggerEvent', eventKey);
+  callInWindow('personalize.triggerEvent', eventKey);
   successGTM();
 }
 
 function performSetAttributes(userAttributes) {
-  callInWindow('personalization.set', userAttributes);
+  callInWindow('personalize.set', userAttributes);
   successGTM();
 }
 
 function performSetUserId(userId, preserveUserAttributes) {
   if(preserveUserAttributes) {
-    callInWindow('personalization.setUserId', userId, {preserveUserAttributes: true});
+    callInWindow('personalize.setUserId', userId, {preserveUserAttributes: true});
   } else {
-    callInWindow('personalization.setUserId', userId);
+    callInWindow('personalize.setUserId', userId);
   }
   
   successGTM();
 }
 
 function performReset() {
-  callInWindow('personalization.reset');
+  callInWindow('personalize.reset');
   successGTM();
 }
 
@@ -433,7 +431,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.getInitializationStatus"
+                    "string": "personalize.getInitializationStatus"
                   },
                   {
                     "type": 8,
@@ -472,7 +470,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.triggerImpression"
+                    "string": "personalize.triggerImpression"
                   },
                   {
                     "type": 8,
@@ -511,7 +509,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.init"
+                    "string": "personalize.init"
                   },
                   {
                     "type": 8,
@@ -550,7 +548,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.triggerEvent"
+                    "string": "personalize.triggerEvent"
                   },
                   {
                     "type": 8,
@@ -589,7 +587,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.set"
+                    "string": "personalize.set"
                   },
                   {
                     "type": 8,
@@ -628,7 +626,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.setUserId"
+                    "string": "personalize.setUserId"
                   },
                   {
                     "type": 8,
@@ -667,7 +665,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.reset"
+                    "string": "personalize.reset"
                   },
                   {
                     "type": 8,
@@ -706,7 +704,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "personalization.setEdgeApiUrl"
+                    "string": "personalize.setEdgeApiUrl"
                   },
                   {
                     "type": 8,
@@ -746,7 +744,7 @@ ___WEB_PERMISSIONS___
             "listItem": [
               {
                 "type": 1,
-                "string": "https://assets.contentstack.io/v3/assets/*"
+                "string": "https://cdn.jsdelivr.net/npm/@contentstack/personalize-edge-sdk/*"
               }
             ]
           }
@@ -819,8 +817,8 @@ scenarios:
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.setEdgeApiUrl', mockData.edgeApiUrl);
-    assertApi('callInWindow').wasCalledWith('personalization.init', mockData.projectUid, {edgeMode:true});
+    assertApi('callInWindow').wasCalledWith('personalize.setEdgeApiUrl', mockData.edgeApiUrl);
+    assertApi('callInWindow').wasCalledWith('personalize.init', mockData.projectUid);
 - name: logs error and exits when sdk fails to load when initialize is selected
   code: |-
     let success, failure;
@@ -845,7 +843,7 @@ scenarios:
 - name: checks if init was called before performing actions
   code: |-
     mock('callInWindow', function(method){
-      if(method === "personalization.getInitializationStatus"){
+      if(method === "personalize.getInitializationStatus"){
         return "initializing";
       }
     });
@@ -855,18 +853,18 @@ scenarios:
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.getInitializationStatus');
+    assertApi('callInWindow').wasCalledWith('personalize.getInitializationStatus');
 - name: fails if initialize is not called before performing actions
   code: |-
     mock('callInWindow', function(method){
-      if(method === "personalization.getInitializationStatus"){
+      if(method === "personalize.getInitializationStatus"){
         return undefined;
       }
     });
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.getInitializationStatus');
+    assertApi('callInWindow').wasCalledWith('personalize.getInitializationStatus');
     assertApi('logToConsole').wasCalledWith('Cannot perform actions before initialization');
     assertApi('gtmOnFailure').wasCalled();
 - name: triggers impressions for a list of experiences when triggerImpressions is
@@ -877,21 +875,21 @@ scenarios:
     mockData.experiences = testExperiences;
 
     mock('callInWindow', function (method) {
-      if (method === 'personalization.getInitializationStatus') {
+      if (method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.triggerImpression', testExperiences[0].shortUID);
-    assertApi('callInWindow').wasCalledWith('personalization.triggerImpression', testExperiences[1].shortUID);
+    assertApi('callInWindow').wasCalledWith('personalize.triggerImpression', testExperiences[0].shortUID);
+    assertApi('callInWindow').wasCalledWith('personalize.triggerImpression', testExperiences[1].shortUID);
     assertApi('gtmOnSuccess').wasCalled();
 - name: fails if triggerImpressions is selected and did not input experienceShortUIDs
   code: |
     mockData.actionType = 'triggerImpressions';
     mock('callInWindow', function (method) {
-      if (method === 'personalization.getInitializationStatus') {
+      if (method === 'personalize.getInitializationStatus') {
         return 'initialzing';
       }
     });
@@ -906,21 +904,21 @@ scenarios:
     mockData.eventKey = "mock-event";
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.triggerEvent', 'mock-event');
+    assertApi('callInWindow').wasCalledWith('personalize.triggerEvent', 'mock-event');
     assertApi('gtmOnSuccess').wasCalled();
 - name: fails if triggerEvent is selected and did not input eventKey
   code: |-
     mockData.actionType = "triggerEvent";
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
@@ -934,7 +932,7 @@ scenarios:
     mockData.actionType = undefined;
 
     mock('callInWindow', function (method) {
-      if (method === 'personalization.getInitializationStatus') {
+      if (method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
@@ -949,21 +947,21 @@ scenarios:
     mockData.userAttributes = [{"attributeKey":"mock-attribute","attributeValue":"true"}];
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.set', {"mock-attribute":true});
+    assertApi('callInWindow').wasCalledWith('personalize.set', {"mock-attribute":true});
     assertApi('gtmOnSuccess').wasCalled();
 - name: fails to set user attributes if undefined
   code: |-
     mockData.actionType = "setAttributes";
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
@@ -978,7 +976,7 @@ scenarios:
     mockData.preserveUserAttributes = true;
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
@@ -990,7 +988,7 @@ scenarios:
 
     const userId = 'mock-email@gmail.com';
 
-    assertApi('callInWindow').wasCalledWith('personalization.setUserId', userId, {preserveUserAttributes: true});
+    assertApi('callInWindow').wasCalledWith('personalize.setUserId', userId, {preserveUserAttributes: true});
     assertApi('gtmOnSuccess').wasCalled();
 - name: sets the user id when setUserId is selected and preserveUserAttributes is
     false
@@ -999,7 +997,7 @@ scenarios:
     mockData.preserveUserAttributes = false;
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
@@ -1012,21 +1010,21 @@ scenarios:
 
     const userId = 'mock-email@gmail.com';
 
-    assertApi('callInWindow').wasCalledWith('personalization.setUserId', userId);
+    assertApi('callInWindow').wasCalledWith('personalize.setUserId', userId);
     assertApi('gtmOnSuccess').wasCalled();
 - name: resets the sdk when reset action is selected
   code: |-
     mockData.actionType = 'reset';
 
     mock('callInWindow', function (method) {
-      if(method === 'personalization.getInitializationStatus') {
+      if(method === 'personalize.getInitializationStatus') {
         return 'initializing';
       }
     });
 
     runCode(mockData);
 
-    assertApi('callInWindow').wasCalledWith('personalization.reset');
+    assertApi('callInWindow').wasCalledWith('personalize.reset');
     assertApi('gtmOnSuccess').wasCalled();
 setup: |-
   const log = require('logToConsole');
