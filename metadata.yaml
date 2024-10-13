@@ -1,5 +1,7 @@
 homepage: "https://www.contentstack.com"
 documentation: "https://www.contentstack.com/docs"
 versions:
+  - sha: 60e5d5f23fc8ea2f849de35a54c02fce06b18f41
+    changeNotes: Update to the latest public Personalize SDK.
   - sha: b2299ca9adf256fe84e78f8850bdbac619f59f8a
     changeNotes: Initial release.
